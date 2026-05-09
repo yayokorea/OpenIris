@@ -31,6 +31,7 @@ constexpr int HTTP_ANY = 0b01111111;
 #include "data/StateManager/StateManager.hpp"
 #include "data/config/project_config.hpp"
 #include "data/utilities/network_utilities.hpp"
+#include "controlWebpage.h"
 #include "elegantWebpage.h"
 #include "io/camera/cameraHandler.hpp"
 #include "tasks/tasks.hpp"
@@ -38,7 +39,7 @@ constexpr int HTTP_ANY = 0b01111111;
 class BaseAPI {
  protected:
   std::string api_url;
-  bool _authRequired;
+  bool _authRequired = false;
 
   static const char* MIMETYPE_HTML;
   static const char* MIMETYPE_JSON;
@@ -46,12 +47,14 @@ class BaseAPI {
  protected:
   /* Commands */
   void setWiFi(AsyncWebServerRequest* request);
+  void setAPWiFi(AsyncWebServerRequest* request);
   void setWiFiTXPower(AsyncWebServerRequest* request);
   void getJsonConfig(AsyncWebServerRequest* request);
   void factoryReset(AsyncWebServerRequest* request);
   void setDeviceConfig(AsyncWebServerRequest* request);
   void rebootDevice(AsyncWebServerRequest* request);
   void ping(AsyncWebServerRequest* request);
+  void getDeviceIP(AsyncWebServerRequest* request);
   void save(AsyncWebServerRequest* request);
   void rssi(AsyncWebServerRequest* request);
 

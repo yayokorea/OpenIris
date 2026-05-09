@@ -40,6 +40,7 @@ void APIServer::setup() {
 
 void APIServer::setupServer() {
   routes.emplace("wifi", &APIServer::setWiFi);
+  routes.emplace("setAP", &APIServer::setAPWiFi);
   routes.emplace("resetConfig", &APIServer::factoryReset);
   routes.emplace("setDevice", &APIServer::setDeviceConfig);
   routes.emplace("rebootDevice", &APIServer::rebootDevice);
@@ -51,6 +52,7 @@ void APIServer::setupServer() {
   routes.emplace("restartCamera", &APIServer::restartCamera);
 #endif  // SIM_ENABLED
   routes.emplace("ping", &APIServer::ping);
+  routes.emplace("ip", &APIServer::getDeviceIP);
   routes.emplace("save", &APIServer::save);
   routes.emplace("wifiStrength", &APIServer::rssi);
 
@@ -92,9 +94,9 @@ void APIServer::handleRequest(AsyncWebServerRequest* request) {
     log_i("Request: %s", request->pathArg(1).c_str());
 
     auto it_map = route_map.find(request->pathArg(0).c_str());
-    auto it_method = it_map->second.find(request->pathArg(1).c_str());
 
     if (it_map != route_map.end()) {
+      auto it_method = it_map->second.find(request->pathArg(1).c_str());
       if (it_method != it_map->second.end()) {
         log_d("We are trying to execute the function");
         (*this.*(it_method->second))(request);

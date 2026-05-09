@@ -26,7 +26,7 @@ void WiFiHandler::begin() {
   WiFi.setMinSecurity(WIFI_AUTH_WEP);
 
   log_i("Starting WiFi Handler \n\r");
-  if (this->_enable_adhoc ||
+  if (this->_enable_adhoc || configManager.getAPWifiConfig().adhoc ||
       wifiStateManager.getCurrentState() == WiFiState_e::WiFiState_ADHOC) {
     log_d("ADHOC is enabled, setting up ADHOC network \n\r");
     this->setUpADHOC();

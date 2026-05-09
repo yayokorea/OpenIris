@@ -21,8 +21,9 @@ BaseAPI::~BaseAPI() {}
 void BaseAPI::begin() {
   //! i have changed this to use lambdas instead of std::bind to avoid the
   //! overhead. Lambdas are always more preferable.
-  server.on("/", 0b00000001,
-            [&](AsyncWebServerRequest* request) { request->send(200); });
+  server.on("/", 0b00000001, [&](AsyncWebServerRequest* request) {
+    request->send(200, "text/html", CONTROL_HTML);
+  });
 
   // preflight cors check
   server.on("/", 0b01000000, [&](AsyncWebServerRequest* request) {
@@ -112,6 +113,40 @@ void BaseAPI::setWiFi(AsyncWebServerRequest* request) {
   }
 }
 
+void BaseAPI::setAPWiFi(AsyncWebServerRequest* request) {
+  switch (_networkMethodsMap_enum[request->method()]) {
+    case POST: {
+      int params = request->params();
+      std::string ssid;
+      std::string password;
+      uint8_t channel = 1;
+      bool adhoc = false;
+
+      for (int i = 0; i < params; i++) {
+        const AsyncWebParameter* param = request->getParam(i);
+        if (param->name() == "ssid") {
+          ssid.assign(param->value().c_str());
+        } else if (param->name() == "password") {
+          password.assign(param->value().c_str());
+        } else if (param->name() == "channel") {
+          channel = (uint8_t)atoi(param->value().c_str());
+        } else if (param->name() == "adhoc") {
+          adhoc = (bool)atoi(param->value().c_str());
+        }
+      }
+
+      projectConfig.setAPWifiConfig(ssid, password, channel, adhoc, true);
+      request->send(200, MIMETYPE_JSON,
+                    "{\"msg\":\"Done. Access Point Config has been set.\"}");
+      break;
+    }
+    default: {
+      request->send(400, MIMETYPE_JSON, "{\"msg\":\"Invalid Request\"}");
+      break;
+    }
+  }
+}
+
 void BaseAPI::getJsonConfig(AsyncWebServerRequest* request) {
   // returns the current stored config in case it get's deleted on the PC.
   switch (_networkMethodsMap_enum[request->method()]) {
@@ -127,12 +162,13 @@ void BaseAPI::getJsonConfig(AsyncWebServerRequest* request) {
       wifiConfigSerialized += "]";
 
       std::string json = Helpers::format_string(
-          "{%s, %s, %s, %s, %s}",
+          "{%s, %s, %s, %s, %s, %s}",
           projectConfig.getDeviceConfig().toRepresentation().c_str(),
           projectConfig.getCameraConfig().toRepresentation().c_str(),
           wifiConfigSerialized.c_str(),
           projectConfig.getMDNSConfig().toRepresentation().c_str(),
-          projectConfig.getAPWifiConfig().toRepresentation().c_str());
+          projectConfig.getAPWifiConfig().toRepresentation().c_str(),
+          projectConfig.getWiFiTxPowerConfig().toRepresentation().c_str());
       request->send(200, MIMETYPE_JSON, json.c_str());
       break;
     }
@@ -152,11 +188,12 @@ void BaseAPI::setDeviceConfig(AsyncWebServerRequest* request) {
     case POST: {
       int params = request->params();
 
-      std::string hostname;
-      std::string service;
-      std::string ota_password;
-      std::string ota_login;
-      int ota_port;
+      std::string hostname = projectConfig.getMDNSConfig().hostname;
+      std::string service = projectConfig.getMDNSConfig().service;
+      std::string ota_password = projectConfig.getDeviceConfig().OTAPassword;
+      std::string ota_login = projectConfig.getDeviceConfig().OTALogin;
+      int ota_port = projectConfig.getDeviceConfig().OTAPort;
+      uint8_t txPower = projectConfig.getWiFiTxPowerConfig().power;
 
       for (int i = 0; i < params; i++) {
         const AsyncWebParameter* param = request->getParam(i);
@@ -176,12 +213,18 @@ void BaseAPI::setDeviceConfig(AsyncWebServerRequest* request) {
           ota_login.assign(param->value().c_str());
         } else if (param->name() == "ota_password") {
           ota_password.assign(param->value().c_str());
+        } else if (param->name() == "txpower") {
+          txPower = (uint8_t)atoi(param->value().c_str());
         }
       }
       // note: We're passing empty params by design, this is done to reset
       // specific fields
       projectConfig.setDeviceConfig(ota_login, ota_password, ota_port, true);
       projectConfig.setMDNSConfig(hostname, service, true);
+      projectConfig.setWiFiTxPower(txPower, true);
+      projectConfig.deviceConfigSave();
+      projectConfig.mdnsConfigSave();
+      projectConfig.wifiTxPowerConfigSave();
       request->send(200, MIMETYPE_JSON,
                     "{\"msg\":\"Done. Device Config has been set.\"}");
     }
@@ -206,6 +249,11 @@ void BaseAPI::setWiFiTXPower(AsyncWebServerRequest* request) {
       projectConfig.wifiTxPowerConfigSave();
       request->send(200, MIMETYPE_JSON,
                     "{\"msg\":\"Done. TX Power has been set.\"}");
+      break;
+    }
+    default: {
+      request->send(400, MIMETYPE_JSON, "{\"msg\":\"Invalid Request\"}");
+      break;
     }
   }
 }
@@ -215,6 +263,7 @@ void BaseAPI::rebootDevice(AsyncWebServerRequest* request) {
     case GET: {
       request->send(200, MIMETYPE_JSON, "{\"msg\":\"Rebooting Device\"}");
       OpenIrisTasks::ScheduleRestart(2000);
+      break;
     }
     default: {
       request->send(400, MIMETYPE_JSON, "{\"msg\":\"Invalid Request\"}");
@@ -229,6 +278,7 @@ void BaseAPI::factoryReset(AsyncWebServerRequest* request) {
       log_d("Factory Reset");
       projectConfig.reset();
       request->send(200, MIMETYPE_JSON, "{\"msg\":\"Factory Reset\"}");
+      break;
     }
     default: {
       request->send(400, MIMETYPE_JSON, "{\"msg\":\"Invalid Request\"}");
@@ -304,12 +354,28 @@ void BaseAPI::ping(AsyncWebServerRequest* request) {
   request->send(200, MIMETYPE_JSON, "{\"msg\": \"ok\" }");
 }
 
+void BaseAPI::getDeviceIP(AsyncWebServerRequest* request) {
+  String ip;
+  if (wifiStateManager.getCurrentState() == WiFiState_e::WiFiState_ADHOC) {
+    ip = WiFi.softAPIP().toString();
+  } else {
+    ip = WiFi.localIP().toString();
+  }
+  String json = "{\"ip\": \"" + ip + "\"}";
+  request->send(200, MIMETYPE_JSON, json);
+}
+
 void BaseAPI::save(AsyncWebServerRequest* request) {
   projectConfig.save();
   request->send(200, MIMETYPE_JSON, "{\"msg\": \"ok\" }");
 }
 
 void BaseAPI::rssi(AsyncWebServerRequest* request) {
+  if (!request->hasParam("points")) {
+    request->send(400, MIMETYPE_JSON, "{\"msg\":\"Missing points parameter\"}");
+    return;
+  }
+
   int rssi = Network_Utilities::getStrength(
       request->getParam("points")->value().toInt());
   char _rssiBuffer[20];
