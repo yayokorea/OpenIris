@@ -3,6 +3,18 @@
 [![semantic versioning](https://img.shields.io/badge/semantic%20versioning-2.0.0-green.svg)](https://semver.org)
 > All notable changes to this project will be documented in this file
 
+## [2.10.0](https://github.com/yayokorea/OpenIris/compare/v2.9.1...v2.10.0) (2026-05-12)
+
+
+### 🍕 Features
+
+* OTA 웹페이지 UX 개선 — 자동 릴리즈 로드, 저장소 숨김, yayokorea/OpenIris 기본값 ([77c26bc](https://github.com/yayokorea/OpenIris/commit/77c26bc50efc9933542ca0485afe9c96169fa8a7))
+
+
+### 🐛 Bug Fixes
+
+* intelhex 누락으로 인한 CI 빌드 실패 수정 ([9e4ee49](https://github.com/yayokorea/OpenIris/commit/9e4ee497469a92c3ddd15bb268c9ba47edddcd2a))
+
 ## [2.9.1](https://github.com/EyeTrackVR/OpenIris/compare/v2.9.0...v2.9.1) (2025-01-30)
 
 
