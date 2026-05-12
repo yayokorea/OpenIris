@@ -49,6 +49,7 @@ jobs:
           image: ghcr.io/zanzythebar/piodocker:latest
           options: -v ${{ github.workspace }}:/workspace
           run: |
+            pip install intelhex
             cd ESP
             export OPENIRIS_CI_BUILD=1
             mkdir build 
