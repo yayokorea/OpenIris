@@ -3,6 +3,14 @@
 [![semantic versioning](https://img.shields.io/badge/semantic%20versioning-2.0.0-green.svg)](https://semver.org)
 > All notable changes to this project will be documented in this file
 
+## [2.11.0](https://github.com/yayokorea/OpenIris/compare/v2.10.0...v2.11.0) (2026-05-13)
+
+
+### 🍕 Features
+
+* **ci:** OTA용 app-only .bin 릴리즈 에셋에 추가 ([9f29282](https://github.com/yayokorea/OpenIris/commit/9f29282eb5762819dd754e294d913abd572656f6))
+* **ci:** OTA용 app-only .bin 릴리즈 에셋에 추가 ([cedfbbf](https://github.com/yayokorea/OpenIris/commit/cedfbbf3f298604b03b58c36942bd5f67ea1cba4))
+
 ## [2.10.0](https://github.com/yayokorea/OpenIris/compare/v2.9.1...v2.10.0) (2026-05-12)
 
 
