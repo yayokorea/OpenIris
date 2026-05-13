@@ -1,4 +1,93 @@
 #include "baseAPI.hpp"
+#include <HTTPClient.h>
+#include <WiFiClientSecure.h>
+
+namespace {
+struct GhOTAStatus {
+  volatile int progress = 0;
+  volatile bool inProgress = false;
+  volatile bool hasError = false;
+  String message;
+  String errorMsg;
+} ghStatus;
+
+void githubOTATask(void* param) {
+  String url = *reinterpret_cast<String*>(param);
+  delete reinterpret_cast<String*>(param);
+
+  WiFiClientSecure client;
+  client.setInsecure();
+
+  HTTPClient http;
+  http.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
+  http.begin(client, url);
+  http.addHeader("User-Agent", "ESP32");
+
+  int code = http.GET();
+  if (code != HTTP_CODE_OK) {
+    ghStatus.hasError = true;
+    ghStatus.errorMsg = "HTTP " + String(code);
+    ghStatus.inProgress = false;
+    http.end();
+    vTaskDelete(NULL);
+    return;
+  }
+
+  int totalLen = http.getSize();
+  if (!Update.begin(totalLen > 0 ? totalLen : UPDATE_SIZE_UNKNOWN, U_FLASH)) {
+    ghStatus.hasError = true;
+    ghStatus.errorMsg = String(Update.errorString());
+    ghStatus.inProgress = false;
+    http.end();
+    vTaskDelete(NULL);
+    return;
+  }
+
+  WiFiClient* stream = http.getStreamPtr();
+  uint8_t buf[1024];
+  int written = 0;
+
+  while (http.connected() || stream->available()) {
+    int avail = stream->available();
+    if (avail > 0) {
+      int toRead = min(avail, (int)sizeof(buf));
+      int bytesRead = stream->readBytes(buf, toRead);
+      if (Update.write(buf, bytesRead) != (size_t)bytesRead) {
+        ghStatus.hasError = true;
+        ghStatus.errorMsg = String(Update.errorString());
+        ghStatus.inProgress = false;
+        http.end();
+        vTaskDelete(NULL);
+        return;
+      }
+      written += bytesRead;
+      if (totalLen > 0) {
+        ghStatus.progress = 5 + (written * 90 / totalLen);
+        ghStatus.message = String(written / 1024) + "KB / " + String(totalLen / 1024) + "KB";
+      } else {
+        ghStatus.message = String(written / 1024) + "KB 다운로드됨";
+      }
+    }
+    if (totalLen > 0 && written >= totalLen) break;
+    delay(1);
+  }
+
+  if (Update.end(true)) {
+    ghStatus.progress = 100;
+    ghStatus.message = "설치 완료! 재부팅 중...";
+    ghStatus.inProgress = false;
+    http.end();
+    delay(1500);  // 브라우저가 100% 상태를 폴링할 시간 확보
+    ESP.restart();
+  } else {
+    ghStatus.hasError = true;
+    ghStatus.errorMsg = String(Update.errorString());
+    ghStatus.inProgress = false;
+    http.end();
+  }
+  vTaskDelete(NULL);
+}
+}  // namespace
 
 const char* BaseAPI::MIMETYPE_JSON{"application/json"};
 
@@ -507,4 +596,36 @@ void BaseAPI::beginOTA() {
           return;
         }
       });
+
+  // GitHub OTA: ESP가 직접 URL에서 다운로드+플래시
+  server.on("/github-ota", HTTP_POST, [&](AsyncWebServerRequest* request) {
+    checkAuthentication(request, login, password);
+
+    if (ghStatus.inProgress) {
+      return request->send(409, "text/plain", "OTA already in progress");
+    }
+    if (!request->hasParam("url", true)) {
+      return request->send(400, "text/plain", "Missing url parameter");
+    }
+
+    String* url = new String(request->getParam("url", true)->value());
+    ghStatus = GhOTAStatus{};
+    ghStatus.inProgress = true;
+    ghStatus.message = "시작 중...";
+
+    esp_camera_deinit();
+    digitalWrite(PWDN_GPIO_NUM, HIGH);
+
+    xTaskCreate(githubOTATask, "ghOTA", 8192, url, 1, NULL);
+    request->send(200, "application/json", "{\"started\":true}");
+  });
+
+  server.on("/ghota-status", HTTP_GET, [](AsyncWebServerRequest* request) {
+    String json = "{\"progress\":" + String(ghStatus.progress) +
+                  ",\"inProgress\":" + (ghStatus.inProgress ? "true" : "false") +
+                  ",\"error\":" + (ghStatus.hasError ? "true" : "false") +
+                  ",\"message\":\"" + ghStatus.message + "\"" +
+                  ",\"errorMsg\":\"" + ghStatus.errorMsg + "\"}";
+    request->send(200, "application/json", json);
+  });
 }
