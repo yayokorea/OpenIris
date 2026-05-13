@@ -1,4 +1,46 @@
 #include "baseAPI.hpp"
+#include <HTTPUpdate.h>
+#include <WiFiClientSecure.h>
+
+namespace {
+struct GhOTAStatus {
+  volatile int progress = 0;
+  volatile bool inProgress = false;
+  volatile bool hasError = false;
+  String message;
+  String errorMsg;
+} ghStatus;
+
+void githubOTATask(void* param) {
+  String url = *reinterpret_cast<String*>(param);
+  delete reinterpret_cast<String*>(param);
+
+  WiFiClientSecure client;
+  client.setInsecure();
+
+  httpUpdate.onProgress([](int cur, int total) {
+    if (total > 0) {
+      ghStatus.progress = 5 + (cur * 90 / total);
+      ghStatus.message = String(cur / 1024) + "KB / " + String(total / 1024) + "KB";
+    }
+  });
+
+  t_httpUpdate_return ret = httpUpdate.update(client, url);
+
+  if (ret == HTTP_UPDATE_OK) {
+    ghStatus.progress = 100;
+    ghStatus.message = "설치 완료! 재부팅 중...";
+    ghStatus.inProgress = false;
+    delay(500);
+    ESP.restart();
+  } else {
+    ghStatus.hasError = true;
+    ghStatus.errorMsg = httpUpdate.getLastErrorString();
+    ghStatus.inProgress = false;
+  }
+  vTaskDelete(NULL);
+}
+}  // namespace
 
 const char* BaseAPI::MIMETYPE_JSON{"application/json"};
 
@@ -507,4 +549,36 @@ void BaseAPI::beginOTA() {
           return;
         }
       });
+
+  // GitHub OTA: ESP가 직접 URL에서 다운로드+플래시
+  server.on("/github-ota", HTTP_POST, [&](AsyncWebServerRequest* request) {
+    checkAuthentication(request, login, password);
+
+    if (ghStatus.inProgress) {
+      return request->send(409, "text/plain", "OTA already in progress");
+    }
+    if (!request->hasParam("url", true)) {
+      return request->send(400, "text/plain", "Missing url parameter");
+    }
+
+    String* url = new String(request->getParam("url", true)->value());
+    ghStatus = GhOTAStatus{};
+    ghStatus.inProgress = true;
+    ghStatus.message = "시작 중...";
+
+    esp_camera_deinit();
+    digitalWrite(PWDN_GPIO_NUM, HIGH);
+
+    xTaskCreate(githubOTATask, "ghOTA", 8192, url, 1, NULL);
+    request->send(200, "application/json", "{\"started\":true}");
+  });
+
+  server.on("/github-ota/status", HTTP_GET, [](AsyncWebServerRequest* request) {
+    String json = "{\"progress\":" + String(ghStatus.progress) +
+                  ",\"inProgress\":" + (ghStatus.inProgress ? "true" : "false") +
+                  ",\"error\":" + (ghStatus.hasError ? "true" : "false") +
+                  ",\"message\":\"" + ghStatus.message + "\"" +
+                  ",\"errorMsg\":\"" + ghStatus.errorMsg + "\"}";
+    request->send(200, "application/json", json);
+  });
 }
