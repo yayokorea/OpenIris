@@ -132,7 +132,7 @@ async function ghInstall(idx){
 }
 async function ghPollStatus(){
   try{
-    var r=await fetch('/github-ota/status',{credentials:'include'});
+    var r=await fetch('/ghota-status',{credentials:'include'});
     var s=await r.json();
     if(s.error){
       ghProg(0,'실패',s.errorMsg,'err');

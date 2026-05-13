@@ -573,7 +573,7 @@ void BaseAPI::beginOTA() {
     request->send(200, "application/json", "{\"started\":true}");
   });
 
-  server.on("/github-ota/status", HTTP_GET, [](AsyncWebServerRequest* request) {
+  server.on("/ghota-status", HTTP_GET, [](AsyncWebServerRequest* request) {
     String json = "{\"progress\":" + String(ghStatus.progress) +
                   ",\"inProgress\":" + (ghStatus.inProgress ? "true" : "false") +
                   ",\"error\":" + (ghStatus.hasError ? "true" : "false") +
