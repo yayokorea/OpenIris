@@ -1,5 +1,5 @@
 #include "baseAPI.hpp"
-#include <HTTPUpdate.h>
+#include <HTTPClient.h>
 #include <WiFiClientSecure.h>
 
 namespace {
@@ -18,25 +18,72 @@ void githubOTATask(void* param) {
   WiFiClientSecure client;
   client.setInsecure();
 
-  httpUpdate.onProgress([](int cur, int total) {
-    if (total > 0) {
-      ghStatus.progress = 5 + (cur * 90 / total);
-      ghStatus.message = String(cur / 1024) + "KB / " + String(total / 1024) + "KB";
+  HTTPClient http;
+  http.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
+  http.begin(client, url);
+  http.addHeader("User-Agent", "ESP32");
+
+  int code = http.GET();
+  if (code != HTTP_CODE_OK) {
+    ghStatus.hasError = true;
+    ghStatus.errorMsg = "HTTP " + String(code);
+    ghStatus.inProgress = false;
+    http.end();
+    vTaskDelete(NULL);
+    return;
+  }
+
+  int totalLen = http.getSize();
+  if (!Update.begin(totalLen > 0 ? totalLen : UPDATE_SIZE_UNKNOWN, U_FLASH)) {
+    ghStatus.hasError = true;
+    ghStatus.errorMsg = String(Update.errorString());
+    ghStatus.inProgress = false;
+    http.end();
+    vTaskDelete(NULL);
+    return;
+  }
+
+  WiFiClient* stream = http.getStreamPtr();
+  uint8_t buf[1024];
+  int written = 0;
+
+  while (http.connected() || stream->available()) {
+    int avail = stream->available();
+    if (avail > 0) {
+      int toRead = min(avail, (int)sizeof(buf));
+      int bytesRead = stream->readBytes(buf, toRead);
+      if (Update.write(buf, bytesRead) != (size_t)bytesRead) {
+        ghStatus.hasError = true;
+        ghStatus.errorMsg = String(Update.errorString());
+        ghStatus.inProgress = false;
+        http.end();
+        vTaskDelete(NULL);
+        return;
+      }
+      written += bytesRead;
+      if (totalLen > 0) {
+        ghStatus.progress = 5 + (written * 90 / totalLen);
+        ghStatus.message = String(written / 1024) + "KB / " + String(totalLen / 1024) + "KB";
+      } else {
+        ghStatus.message = String(written / 1024) + "KB 다운로드됨";
+      }
     }
-  });
+    if (totalLen > 0 && written >= totalLen) break;
+    delay(1);
+  }
 
-  t_httpUpdate_return ret = httpUpdate.update(client, url);
-
-  if (ret == HTTP_UPDATE_OK) {
+  if (Update.end(true)) {
     ghStatus.progress = 100;
     ghStatus.message = "설치 완료! 재부팅 중...";
     ghStatus.inProgress = false;
+    http.end();
     delay(500);
     ESP.restart();
   } else {
     ghStatus.hasError = true;
-    ghStatus.errorMsg = httpUpdate.getLastErrorString();
+    ghStatus.errorMsg = String(Update.errorString());
     ghStatus.inProgress = false;
+    http.end();
   }
   vTaskDelete(NULL);
 }
