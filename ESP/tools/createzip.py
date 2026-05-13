@@ -4,6 +4,7 @@ Import("env")
 import sys
 from colors import *
 import os
+import shutil
 from ntpath import basename
 from zipfile import ZipFile
 import json
@@ -126,7 +127,12 @@ def createZip(source, target, env):
                     ],
                 }
                 archive.writestr("manifest.json", json.dumps(manifest))
-                sys.stdout.write(RESET)
+
+            app_bin_dest = "./build/{0}/{1}.bin".format(str(env["PIOENV"]), env["PROGNAME"])
+            shutil.copy(program_path, app_bin_dest)
+            sys.stdout.write(GREEN)
+            print("Copied app binary for OTA: %s" % app_bin_dest)
+            sys.stdout.write(RESET)
         else:
             sys.stdout.write(BLUE)
             print("Not running on Linux, skipping zip creation")

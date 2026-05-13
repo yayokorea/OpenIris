@@ -160,6 +160,9 @@
                 "assets": [
                     {
                         "path": "./build/**/*.zip"
+                    },
+                    {
+                        "path": "./build/**/*.bin"
                     }
                 ]
             }

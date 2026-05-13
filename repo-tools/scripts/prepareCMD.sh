@@ -51,10 +51,14 @@ buildPaths=($(ls ./build))
 for buildPath in "${buildPaths[@]}"
 do
     printf "[prepareCMD.sh]: Build Path: ${buildPath} \n"
-    fileToRename=$(ls ./build/${buildPath})
-    newFileName=$(echo $fileToRename | sed "s/v[0-9]*\.[0-9]*\.[0-9]*/v${nextReleaseVersion}/g")
-    printf "[prepareCMD.sh]: Renaming file: ${fileToRename} to ${newFileName} \n"
-    mv ./build/${buildPath}/${fileToRename} ./build/${buildPath}/${newFileName}
+    for fileToRename in $(ls ./build/${buildPath})
+    do
+        newFileName=$(echo $fileToRename | sed "s/v[0-9]*\.[0-9]*\.[0-9]*/v${nextReleaseVersion}/g")
+        if [ "$fileToRename" != "$newFileName" ]; then
+            printf "[prepareCMD.sh]: Renaming file: ${fileToRename} to ${newFileName} \n"
+            mv ./build/${buildPath}/${fileToRename} ./build/${buildPath}/${newFileName}
+        fi
+    done
 done
 
 printf "[prepareCMD.sh]: Done, continuing with release. \n"
