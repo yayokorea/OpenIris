@@ -3,6 +3,21 @@
 [![semantic versioning](https://img.shields.io/badge/semantic%20versioning-2.0.0-green.svg)](https://semver.org)
 > All notable changes to this project will be documented in this file
 
+## [2.12.0](https://github.com/yayokorea/OpenIris/compare/v2.11.0...v2.12.0) (2026-05-13)
+
+
+### 🍕 Features
+
+* **ota:** ESP 직접 GitHub 다운로드로 CORS 문제 해결 ([efb1487](https://github.com/yayokorea/OpenIris/commit/efb1487bf98b69fb477438d311a4e188aca3c781))
+* **ota:** 설정 패널 개선 — 저장소+토글 통합 ([6219b31](https://github.com/yayokorea/OpenIris/commit/6219b3147e17d0df069495f504ca0ea7c65a9657))
+
+
+### 🐛 Bug Fixes
+
+* **ota:** HTTPUpdate → HTTPClient로 교체, 리다이렉트 지원 ([556eeaf](https://github.com/yayokorea/OpenIris/commit/556eeaf4eb161891dcdfb0294b1c8176634746d9))
+* **ota:** status 엔드포인트 URL 충돌 수정 ([3249ed6](https://github.com/yayokorea/OpenIris/commit/3249ed698dd06dcbd644163c4e33f0524218658c))
+* **ota:** 재부팅 전 progress 100% 설정, UI 개선 ([5424000](https://github.com/yayokorea/OpenIris/commit/5424000e21c274dd38be9fd53228866a05b12091))
+
 ## [2.11.0](https://github.com/yayokorea/OpenIris/compare/v2.10.0...v2.11.0) (2026-05-13)
 
 
