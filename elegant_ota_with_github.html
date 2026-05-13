@@ -21,14 +21,13 @@
 #ghp-repo-row{display:flex;gap:6px;margin-bottom:10px}
 #ghp-repo{flex:1;border:1px solid #d0d7de;border-radius:6px;padding:5px 10px;font-size:12px;font-family:monospace}
 #ghp-repo-row button{border:none;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;font-weight:500;background:#0969da;color:#fff}
-#ghp .ins-btn{border:none;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;font-weight:500;background:#2da44e;color:#fff;white-space:nowrap}
+#ghp .ins-btn{border:none;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;font-weight:500;background:#2da44e;color:#fff;white-space:nowrap}
+#ghp .ins-btn:hover{background:#2c974b}
 #ghp .ins-btn:disabled{opacity:.5;cursor:not-allowed}
 #ghp-area{margin-top:4px}
 .rel-tag{font-family:monospace;font-weight:600;font-size:13px}
 .rel-date{font-size:11px;color:#656d76;margin-left:8px}
-.asset-row{display:flex;align-items:center;gap:8px;margin-top:6px;padding:6px 8px;background:#f6f8fa;border:1px solid #d0d7de;border-radius:6px}
-.asset-name{font-family:monospace;font-size:12px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.asset-size{font-size:11px;color:#656d76;white-space:nowrap}
+.gh-grid{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 #ghp-prog{margin-top:10px;display:none}
 #ghp-prog.show{display:block}
 #ghp-bar-wrap{background:#e1e4e8;border-radius:4px;height:5px;overflow:hidden;margin:4px 0}
@@ -38,17 +37,17 @@
 #ghp-st.err{color:#cf222e;font-weight:600}
 </style>
 <div id="ghp">
-  <h3>GitHub &#47407;&#47532;&#51592; <span>&#51088;&#46041;&#49444;&#52824;</span>
-    <button id="ghp-rb" onclick="ghToggleRepo()" style="margin-left:auto;background:#f6f8fa;color:#24292f;border:1px solid #d0d7de;border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer">&#51200;&#51109;&#49548; &#9660;</button>
+  <h3>GitHub 릴리즈 <span>자동설치</span>
+    <button id="ghp-rb" onclick="ghToggleRepo()" style="margin-left:auto;background:#f6f8fa;color:#24292f;border:1px solid #d0d7de;border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer">저장소 ▾</button>
   </h3>
   <div id="ghp-repo-row" style="display:none">
     <input id="ghp-repo" value="yayokorea/OpenIris" placeholder="owner/repo">
-    <button onclick="ghCheck()">&#51201;&#50857;</button>
+    <button onclick="ghCheck()">적용</button>
   </div>
-  <div id="ghp-area"><span style="color:#656d76;font-size:12px">&#47081;&#47532;&#51592; &#48520;&#47084;&#50724;&#45716; &#51473;...</span></div>
+  <div id="ghp-area"><span style="color:#656d76;font-size:12px">릴리즈 불러오는 중...</span></div>
   <div id="ghp-prog">
     <div style="display:flex;justify-content:space-between;font-size:11px;color:#656d76">
-      <span id="ghp-lbl">&#52376;&#47532; &#51473;...</span><span id="ghp-pct">0%</span>
+      <span id="ghp-lbl">처리 중...</span><span id="ghp-pct">0%</span>
     </div>
     <div id="ghp-bar-wrap"><div id="ghp-bar"></div></div>
     <div id="ghp-st"></div>
@@ -153,23 +152,26 @@ async function ghPollStatus(){
 }
 function ghRender(rel){
   window._ghA=[];
-  var bins=(rel.assets||[]).filter(function(a){return a.name.endsWith('.bin');});
+  var all=(rel.assets||[]).filter(function(a){return a.name.endsWith('.bin');});
+  var bins=all.filter(function(a){return a.name.indexOf('_release')!==-1;});
+  if(!bins.length)bins=all;
   var date=new Date(rel.published_at).toLocaleDateString('ko-KR');
   var rows;
   if(bins.length){
-    rows=bins.map(function(a,i){
+    rows='<div class="gh-grid">'+bins.map(function(a,i){
       window._ghA[i]={downloadUrl:a.browser_download_url,name:a.name};
-      return '<div class="asset-row"><span class="asset-name">'+a.name+'</span>'
-        +'<span class="asset-size">'+(a.size/1024).toFixed(0)+' KB</span>'
-        +'<button class="ins-btn" onclick="ghInstall('+i+')">설치</button></div>';
-    }).join('');
+      var board=a.name.replace(/_release.*/,'').replace(/-v.*/,'');
+      return '<button class="ins-btn" onclick="ghInstall('+i+')" title="'+a.name+'">'+board+'</button>';
+    }).join('')+'</div>';
   }else{
     rows='<span style="color:#656d76;font-size:12px">.bin 에셋 없음</span>';
   }
   document.getElementById('ghp-area').innerHTML=
-    '<div style="display:flex;align-items:baseline;margin-bottom:6px">'
+    '<div style="display:flex;align-items:baseline;margin-bottom:4px">'
     +'<span class="rel-tag">'+rel.tag_name+'</span>'
-    +'<span class="rel-date">'+date+'</span></div>'+rows;
+    +'<span class="rel-date">'+date+'</span></div>'
+    +'<div style="font-size:11px;color:#656d76;margin-bottom:2px">보드를 선택하세요</div>'
+    +rows;
 }
 async function ghCheck(){
   var repo=document.getElementById('ghp-repo').value.trim();

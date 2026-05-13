@@ -77,7 +77,7 @@ void githubOTATask(void* param) {
     ghStatus.message = "설치 완료! 재부팅 중...";
     ghStatus.inProgress = false;
     http.end();
-    delay(500);
+    delay(1500);  // 브라우저가 100% 상태를 폴링할 시간 확보
     ESP.restart();
   } else {
     ghStatus.hasError = true;
