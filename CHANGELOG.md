@@ -3,6 +3,13 @@
 [![semantic versioning](https://img.shields.io/badge/semantic%20versioning-2.0.0-green.svg)](https://semver.org)
 > All notable changes to this project will be documented in this file
 
+## [2.12.1](https://github.com/yayokorea/OpenIris/compare/v2.12.0...v2.12.1) (2026-05-17)
+
+
+### 🐛 Bug Fixes
+
+* show real IPv4 instead of mDNS hostname in status panel ([#3](https://github.com/yayokorea/OpenIris/issues/3)) ([4dbff16](https://github.com/yayokorea/OpenIris/commit/4dbff169e18de398a7c8ff77023f33502fefebda))
+
 ## [2.12.0](https://github.com/yayokorea/OpenIris/compare/v2.11.0...v2.12.0) (2026-05-13)
 
 
