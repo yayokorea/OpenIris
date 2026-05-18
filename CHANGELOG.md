@@ -3,6 +3,13 @@
 [![semantic versioning](https://img.shields.io/badge/semantic%20versioning-2.0.0-green.svg)](https://semver.org)
 > All notable changes to this project will be documented in this file
 
+## [2.12.2](https://github.com/yayokorea/OpenIris/compare/v2.12.1...v2.12.2) (2026-05-18)
+
+
+### 🔥 Performance Improvements
+
+* **camera:** reduce heat with GRAB_WHEN_EMPTY and DRAM buffers ([a6d2920](https://github.com/yayokorea/OpenIris/commit/a6d2920e4a990169d192cf7d1575128d06b0dc17))
+
 ## [2.12.1](https://github.com/yayokorea/OpenIris/compare/v2.12.0...v2.12.1) (2026-05-17)
 
 
