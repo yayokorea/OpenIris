@@ -41,7 +41,7 @@ void CameraHandler::setupCameraPinout() {
 
   config.ledc_channel = LEDC_CHANNEL_0;
   config.ledc_timer = LEDC_TIMER_0;
-  config.grab_mode = CAMERA_GRAB_LATEST;
+  config.grab_mode = CAMERA_GRAB_WHEN_EMPTY;
   config.pin_d0 = Y2_GPIO_NUM;
   config.pin_d1 = Y3_GPIO_NUM;
   config.pin_d2 = Y4_GPIO_NUM;
@@ -73,11 +73,10 @@ void CameraHandler::setupBasicResolution() {
     return;
   }
 
-  log_d("[Camera]: Found psram, setting the higher image quality");
-  config.jpeg_quality = 7;  // 0-63 lower number = higher quality, more latency
-                            // and less fps   7 for most fps, 5 for best quality
-  config.fb_count = 3;
-  log_d("[Camera]: Setting fb_location to CAMERA_FB_IN_PSRAM");
+  log_d("[Camera]: Found psram, using DRAM buffers to reduce heat");
+  config.fb_location = CAMERA_FB_IN_DRAM;
+  config.jpeg_quality = 8;  // 0-63 lower number = higher quality; 8 is sufficient for eye tracking
+  config.fb_count = 2;
 }
 
 void CameraHandler::setupCameraSensor() {
