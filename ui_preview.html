@@ -930,7 +930,12 @@ async function loadConfig() {
   } catch (e) { dmsg('설정 로드 실패: ' + e.message, false); }
 
   // Status
-  document.getElementById('status-ip').textContent = window.location.hostname || '--';
+  try {
+    const r = await call('ip');
+    document.getElementById('status-ip').textContent = r.ip || window.location.hostname || '--';
+  } catch(e) {
+    document.getElementById('status-ip').textContent = window.location.hostname || '--';
+  }
   try {
     const s = await call('wifiStrength', 'GET', { points: 5 });
     document.getElementById('status-rssi').textContent = s.rssi + ' / 5';
