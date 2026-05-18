@@ -3,6 +3,13 @@
 [![semantic versioning](https://img.shields.io/badge/semantic%20versioning-2.0.0-green.svg)](https://semver.org)
 > All notable changes to this project will be documented in this file
 
+## [2.13.0](https://github.com/yayokorea/OpenIris/compare/v2.12.2...v2.13.0) (2026-05-18)
+
+
+### 🍕 Features
+
+* **build:** auto-generate controlWebpage.h from ui_preview.html at build time ([f626ebb](https://github.com/yayokorea/OpenIris/commit/f626ebbf54620876ebae3de28fb23bdb7936b0a5))
+
 ## [2.12.2](https://github.com/yayokorea/OpenIris/compare/v2.12.1...v2.12.2) (2026-05-18)
 
 
