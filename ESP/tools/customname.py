@@ -3,12 +3,66 @@
 Import("env")
 import subprocess
 import sys
+import re
+import os
 from colors import *
 
 project = ""
 version = ""
 commit = ""
 branch = ""
+
+
+def generate_webpage(version):
+    project_dir = env.subst("$PROJECT_DIR")
+    src = os.path.join(project_dir, "..", "ui_preview.html")
+    dst = os.path.join(project_dir, "lib", "src", "network", "api", "baseAPI", "controlWebpage.h")
+
+    try:
+        with open(src, "r", encoding="utf-8") as f:
+            html = f.read()
+    except FileNotFoundError:
+        sys.stdout.write(RED)
+        print("[webpage]: ui_preview.html not found at %s" % src)
+        sys.stdout.write(RESET)
+        return
+
+    # Inject version
+    html = html.replace("{{FIRMWARE_VERSION}}", "v%s" % version)
+
+    # Remove HTML comments
+    html = re.sub(r"<!--.*?-->", "", html, flags=re.DOTALL)
+    # Remove CSS block comments
+    html = re.sub(r"/\*.*?\*/", "", html, flags=re.DOTALL)
+
+    # Strip each line; skip standalone JS line comments
+    lines = []
+    for line in html.split("\n"):
+        stripped = line.strip()
+        if stripped.startswith("//"):
+            continue
+        lines.append(stripped)
+
+    html = "".join(lines)
+    # Collapse multiple spaces left by comment removal
+    html = re.sub(r" {2,}", " ", html)
+
+    content = (
+        "#ifndef CONTROL_WEBPAGE_H\n"
+        "#define CONTROL_WEBPAGE_H\n\n"
+        "#include <Arduino.h>\n\n"
+        'const char CONTROL_HTML[] PROGMEM = R"rawliteral(\n'
+        + html + "\n"
+        ')rawliteral";\n\n'
+        "#endif\n"
+    )
+
+    with open(dst, "w", encoding="utf-8") as f:
+        f.write(content)
+
+    sys.stdout.write(GREEN)
+    print("[webpage]: Generated controlWebpage.h  <- v%s" % version)
+    sys.stdout.write(RESET)
 
 
 def onError():
@@ -146,6 +200,9 @@ def customName(project, version, commit, branch):
 
     # replace the VERSION macro with the version from Git
     env.Replace(VERSION="%s" % (s(defines.get("PIO_SRC_TAG"))))
+
+    # Generate controlWebpage.h from ui_preview.html with the current version
+    generate_webpage(firm_version)
 
 
 try:
