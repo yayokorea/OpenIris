@@ -3,6 +3,13 @@
 [![semantic versioning](https://img.shields.io/badge/semantic%20versioning-2.0.0-green.svg)](https://semver.org)
 > All notable changes to this project will be documented in this file
 
+## [2.14.0](https://github.com/yayokorea/OpenIris/compare/v2.13.0...v2.14.0) (2026-05-19)
+
+
+### 📝 Documentation
+
+* **readme:** 포크 이후 변경된 사용자 기능 한국어로 정리 ([79000da](https://github.com/yayokorea/OpenIris/commit/79000da12152d36d1e9faa6b236e933cde7c453f))
+
 ## [2.13.0](https://github.com/yayokorea/OpenIris/compare/v2.12.2...v2.13.0) (2026-05-18)
 
 
