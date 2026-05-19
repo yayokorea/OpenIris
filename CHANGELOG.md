@@ -3,6 +3,13 @@
 [![semantic versioning](https://img.shields.io/badge/semantic%20versioning-2.0.0-green.svg)](https://semver.org)
 > All notable changes to this project will be documented in this file
 
+## [2.14.1](https://github.com/yayokorea/OpenIris/compare/v2.14.0...v2.14.1) (2026-05-19)
+
+
+### 🐛 Bug Fixes
+
+* **ui:** FAB 닫힌 상태에서 뒷배경 콘텐츠 차단 버그 수정, flash 스크립트 추가 ([79d5597](https://github.com/yayokorea/OpenIris/commit/79d5597e737a9e61b41d2aa963f04748e5547a92))
+
 ## [2.14.0](https://github.com/yayokorea/OpenIris/compare/v2.13.0...v2.14.0) (2026-05-19)
 
 
