@@ -3,6 +3,13 @@
 [![semantic versioning](https://img.shields.io/badge/semantic%20versioning-2.0.0-green.svg)](https://semver.org)
 > All notable changes to this project will be documented in this file
 
+## [2.14.2](https://github.com/yayokorea/OpenIris/compare/v2.14.1...v2.14.2) (2026-05-19)
+
+
+### 🐛 Bug Fixes
+
+* **ci:** 웹 UI 버전이 한 버전 낮게 표시되는 버그 수정 ([7e2baf8](https://github.com/yayokorea/OpenIris/commit/7e2baf8fb93c895ceefda8cd6ed2cff6740220e2))
+
 ## [2.14.1](https://github.com/yayokorea/OpenIris/compare/v2.14.0...v2.14.1) (2026-05-19)
 
 
