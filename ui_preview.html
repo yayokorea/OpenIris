@@ -264,7 +264,7 @@ body{
 .json .b{color:oklch(0.78 0.13 320)}
 
 /* FAB */
-.fab-container{position:fixed;right:24px;bottom:24px;z-index:50;display:flex;flex-direction:column;align-items:flex-end;gap:16px}
+.fab-container{position:fixed;right:24px;bottom:24px;z-index:50;display:flex;flex-direction:column;align-items:flex-end;gap:16px;pointer-events:none}
 .fab-menu{display:flex;flex-direction:column;align-items:flex-end;gap:12px;opacity:0;pointer-events:none;transform:translateY(20px);transition:all .3s cubic-bezier(0.175,0.885,0.32,1.275)}
 .fab-container.is-open .fab-menu{opacity:1;pointer-events:auto;transform:translateY(0)}
 .fab-row{display:flex;align-items:center;gap:12px;cursor:pointer}
@@ -290,6 +290,7 @@ body{
   display:grid;place-items:center;border:none;cursor:pointer;
   box-shadow:0 8px 24px -4px oklch(0.58 0.14 244 / 0.4);
   transition:all .3s cubic-bezier(0.175,0.885,0.32,1.275);
+  pointer-events:auto;
 }
 .fab-main:hover{transform:scale(1.05);box-shadow:0 12px 28px -4px oklch(0.58 0.14 244 / 0.5)}
 .fab-main:active{transform:scale(0.95)}
