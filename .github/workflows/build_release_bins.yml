@@ -29,7 +29,32 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
+      next_version: ${{ steps.get-version.outputs.next_version }}
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install semantic-release
+        run: |
+          npm install -g conventional-changelog-conventionalcommits@6
+          npm install -g semantic-release@v19.0.5
+          npm install -g @semantic-release/exec
+          npm install -g @semantic-release/git
+          npm install -g @semantic-release/release-notes-generator
+          npm install -g @semantic-release/changelog
+          npm install -g @semantic-release/github
+      - name: Get next release version
+        id: get-version
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          NEXT_VERSION=$(semantic-release --dry-run 2>&1 | grep -oP "The next release version is \K\S+")
+          echo "next_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
+          echo "Next release version: $NEXT_VERSION"
       - id: set-matrix
         run: echo "matrix={\"target_name\":[\"esp32AIThinker\",\"esp32M5Stack\",\"esp32Cam\",\"esp_eye\",\"wrover\",\"wrooms3QIO\",\"wrooms3QIOUSB\",\"wrooms3\",\"wrooms3USB\",\"xiaosenses3\",\"xiaosenses3_USB\",\"Babble-wrooms-s3\",\"Babble_USB-wrooms-s3\"],\"target_build_type\":[\"\", \"_release\"]}" >> $GITHUB_OUTPUT
 
@@ -43,6 +68,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Inject next version into dev_config.ini
+        if: ${{ needs.setup.outputs.next_version != '' }}
+        run: |
+          echo "Injecting version ${{ needs.setup.outputs.next_version }} into dev_config.ini"
+          sed -i "s/^custom_firmware_version\s*=.*/custom_firmware_version = ${{ needs.setup.outputs.next_version }}/" ESP/ini/dev_config.ini
       - name: Build OpenIris Firmware
         uses: addnab/docker-run-action@v3
         with:
