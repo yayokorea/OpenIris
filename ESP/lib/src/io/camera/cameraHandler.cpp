@@ -196,6 +196,8 @@ void CameraHandler::loadConfigData() {
   camera_sensor->set_quality(camera_sensor, cameraConfig.quality);
   camera_sensor->set_agc_gain(camera_sensor, cameraConfig.brightness);
   camera_sensor->set_contrast(camera_sensor, cameraConfig.contrast);
+  // OV2640 contrast configuration overwrites the special-effect register.
+  camera_sensor->set_special_effect(camera_sensor, 2);
   log_d("Loading camera config data done");
 }
 
