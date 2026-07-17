@@ -32,4 +32,5 @@ class CameraHandler : public IObserver<ConfigState_e> {
   void setupCameraPinout();
   void setupBasicResolution();
   void setupCameraSensor();
+  int setOV2640Contrast(int contrast);
 };

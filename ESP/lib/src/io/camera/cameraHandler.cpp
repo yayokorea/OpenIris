@@ -1,5 +1,29 @@
 #include "cameraHandler.hpp"
 
+extern "C" int SCCB_Write(uint8_t slv_addr, uint8_t reg, uint8_t data);
+
+namespace {
+constexpr int kOV2640MinContrast = -2;
+constexpr int kOV2640MaxContrast = 4;
+constexpr uint8_t kOV2640BankSelect = 0xff;
+constexpr uint8_t kOV2640DspBank = 0x00;
+constexpr uint8_t kOV2640BpAddress = 0x7c;
+constexpr uint8_t kOV2640BpData = 0x7d;
+constexpr uint8_t kOV2640GrayscaleWithContrast = 0x1c;
+
+// The first five rows are the stock OV2640 contrast curve. +3 and +4 extend
+// the same pattern for applications that need a harder black/white boundary.
+constexpr uint8_t kOV2640ContrastCurve[7][4] = {
+    {0x20, 0x18, 0x34, 0x06},  // -2
+    {0x20, 0x1c, 0x2a, 0x06},  // -1
+    {0x20, 0x20, 0x20, 0x06},  //  0
+    {0x20, 0x24, 0x16, 0x06},  // +1
+    {0x20, 0x28, 0x0c, 0x06},  // +2
+    {0x20, 0x2c, 0x08, 0x06},  // +3 (extended)
+    {0x20, 0x30, 0x04, 0x06},  // +4 (extended)
+};
+}  // namespace
+
 CameraHandler::CameraHandler(ProjectConfig& configManager)
     : configManager(configManager) {}
 
@@ -195,10 +219,36 @@ void CameraHandler::loadConfigData() {
   this->setCameraResolution((framesize_t)cameraConfig.framesize);
   camera_sensor->set_quality(camera_sensor, cameraConfig.quality);
   camera_sensor->set_agc_gain(camera_sensor, cameraConfig.brightness);
-  camera_sensor->set_contrast(camera_sensor, cameraConfig.contrast);
-  // OV2640 contrast configuration overwrites the special-effect register.
   camera_sensor->set_special_effect(camera_sensor, 2);
+
+  if (camera_sensor->id.PID == OV2640_PID) {
+    if (this->setOV2640Contrast(cameraConfig.contrast) != 0) {
+      log_e("[Camera]: Failed to apply OV2640 contrast %d",
+            cameraConfig.contrast);
+    }
+  } else {
+    camera_sensor->set_contrast(
+        camera_sensor, constrain(cameraConfig.contrast, -2, 2));
+  }
   log_d("Loading camera config data done");
+}
+
+int CameraHandler::setOV2640Contrast(int contrast) {
+  contrast = constrain(contrast, kOV2640MinContrast, kOV2640MaxContrast);
+  const uint8_t* curve =
+      kOV2640ContrastCurve[contrast - kOV2640MinContrast];
+
+  int result = SCCB_Write(camera_sensor->slv_addr, kOV2640BankSelect,
+                          kOV2640DspBank);
+  result |= SCCB_Write(camera_sensor->slv_addr, kOV2640BpAddress, 0x00);
+  result |= SCCB_Write(camera_sensor->slv_addr, kOV2640BpData,
+                       kOV2640GrayscaleWithContrast);
+  result |= SCCB_Write(camera_sensor->slv_addr, kOV2640BpAddress, 0x07);
+  for (size_t i = 0; i < 4; ++i) {
+    result |= SCCB_Write(camera_sensor->slv_addr, kOV2640BpData, curve[i]);
+  }
+
+  return result;
 }
 
 #ifdef CONFIG_CAMERA_MODULE_SWROOM_BABBLE_S3

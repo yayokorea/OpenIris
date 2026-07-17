@@ -409,7 +409,7 @@ void BaseAPI::setCamera(AsyncWebServerRequest* request) {
           temp_camera_brightness = (uint8_t)param->value().toInt();
         } else if (param->name() == "contrast") {
           temp_camera_contrast =
-              (int8_t)constrain(param->value().toInt(), -2, 2);
+              (int8_t)constrain(param->value().toInt(), -2, 4);
         }
       }
       // note: We're passing empty params by design, this is done to reset
