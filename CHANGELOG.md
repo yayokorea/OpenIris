@@ -3,6 +3,18 @@
 [![semantic versioning](https://img.shields.io/badge/semantic%20versioning-2.0.0-green.svg)](https://semver.org)
 > All notable changes to this project will be documented in this file
 
+## [2.16.0](https://github.com/yayokorea/OpenIris/compare/v2.15.1...v2.16.0) (2026-07-17)
+
+
+### 🍕 Features
+
+* Wi-Fi 스캔 및 OTA 릴리스 탐색 개선 ([f4144c5](https://github.com/yayokorea/OpenIris/commit/f4144c5fb7d1c102d38a2b4fd053d64974505b30))
+
+
+### 🐛 Bug Fixes
+
+* PR 빌드 버전 계산 수정 ([e1b9a90](https://github.com/yayokorea/OpenIris/commit/e1b9a9089b8f1e1100de535d0c9b2c8b6d07cdd0))
+
 ## [2.15.1](https://github.com/yayokorea/OpenIris/compare/v2.15.0...v2.15.1) (2026-07-17)
 
 
