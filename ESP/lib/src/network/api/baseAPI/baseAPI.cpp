@@ -1,4 +1,6 @@
 #include "baseAPI.hpp"
+
+#include <ArduinoJson.h>
 #include <HTTPClient.h>
 #include <WiFiClientSecure.h>
 
@@ -475,6 +477,25 @@ void BaseAPI::rssi(AsyncWebServerRequest* request) {
   char _rssiBuffer[20];
   snprintf(_rssiBuffer, sizeof(_rssiBuffer), "{\"rssi\": %d }", rssi);
   request->send(200, MIMETYPE_JSON, _rssiBuffer);
+}
+
+void BaseAPI::scanWiFi(AsyncWebServerRequest* request) {
+  int n = WiFi.scanNetworks();
+  JsonDocument doc;
+  JsonArray networks = doc.to<JsonArray>();
+  for (int i = 0; i < n; ++i) {
+    JsonObject network = networks.add<JsonObject>();
+    network["ssid"] = WiFi.SSID(i);
+    network["rssi"] = WiFi.RSSI(i);
+    network["bssid"] = WiFi.BSSIDstr(i);
+    network["channel"] = WiFi.channel(i);
+    network["enc"] = WiFi.encryptionType(i);
+  }
+  WiFi.scanDelete();
+
+  String json;
+  serializeJson(doc, json);
+  request->send(200, MIMETYPE_JSON, json);
 }
 
 //*********************************************************************************************

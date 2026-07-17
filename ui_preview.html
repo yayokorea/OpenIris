@@ -336,7 +336,7 @@ body{
   }
   .status::-webkit-scrollbar{display:none}
   .status__row{flex-direction:column;align-items:flex-start;gap:2px;white-space:nowrap;font-size:11.5px}
-  
+
   .main{padding:24px 16px 90px}
   .topbar{flex-direction:column;align-items:flex-start;gap:16px;padding-bottom:16px;margin-bottom:20px}
   .topbar__right{width:100%;justify-content:space-between}
@@ -345,7 +345,7 @@ body{
   .panel__foot{flex-direction:column;align-items:stretch;gap:12px;padding:16px}
   .panel__foot .btn{width:100%;justify-content:center}
   .panel__foot--end{flex-direction:row}
-  
+
   .field,.field--3,.field--4{grid-column:span 12}
   .field--inline{flex-wrap:wrap;gap:12px}
   .cam{grid-template-columns:1fr}
@@ -419,7 +419,16 @@ body{
             </div>
             <div class="field">
               <label class="label" for="wf-ssid">SSID</label>
-              <input id="wf-ssid" class="input input--mono" type="text" placeholder="공유기 이름">
+              <div style="display:flex;gap:8px">
+                <input id="wf-ssid" class="input input--mono" type="text" placeholder="공유기 이름">
+                <button class="btn btn--sm" onclick="scanWifi(this)" id="scan-btn">🔍 스캔</button>
+              </div>
+            </div>
+            <div id="scan-results" style="display:none;grid-column:span 12;margin-top:4px">
+              <label class="label">주변 와이파이 <small id="scan-status"></small></label>
+              <div id="scan-list" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(180px, 1fr));gap:8px;margin-top:8px;max-height:240px;overflow-y:auto;background:oklch(0 0 0 / 0.03);border-radius:12px;padding:12px;border:1px solid oklch(0 0 0 / 0.05)">
+                <!-- scan items -->
+              </div>
             </div>
             <div class="field">
               <label class="label" for="wf-pw">패스워드</label>
@@ -807,10 +816,80 @@ function cancelWifi() {
 function saveWifi(b) {
   const name = val('wf-name') || val('wf-ssid');
   if (!name) { dmsg('프로파일 이름 또는 SSID를 입력해주세요', false); return; }
+
+  if (!_editingName && _profiles.length >= 3) {
+    const target = prompt('프로파일이 꽉 찼습니다 (최대 3개).\n교체할 프로파일 이름을 입력하거나 취소하세요:\n' + _profiles.map(p => p.name).join(', '));
+    if (!target) return;
+    const exists = _profiles.find(p => p.name === target);
+    if (!exists) { dmsg('존재하지 않는 프로파일입니다', false); return; }
+    // Overwrite by using the existing name
+    run(b, 'WiFi 교체', async () => {
+      await call('wifi', 'POST', { networkName: target, ssid: val('wf-ssid'), password: val('wf-pw'), channel: val('wf-ch'), power: val('wf-tx'), adhoc: 0 });
+      cancelWifi();
+    });
+    return;
+  }
+
   run(b, 'WiFi 저장', async () => {
     await call('wifi', 'POST', { networkName: name, ssid: val('wf-ssid'), password: val('wf-pw'), channel: val('wf-ch'), power: val('wf-tx'), adhoc: 0 });
     cancelWifi();
   });
+}
+
+function escHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+}
+
+async function scanWifi(b) {
+  const list = document.getElementById('scan-list');
+  const res = document.getElementById('scan-results');
+  const stat = document.getElementById('scan-status');
+
+  res.style.display = 'block';
+  list.innerHTML = '';
+  stat.textContent = '검색 중...';
+  b.disabled = true;
+
+  try {
+    const nets = await call('scanWiFi');
+    stat.textContent = `${nets.length}개 발견`;
+    if (nets.length === 0) {
+      list.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--ink-3)">검색된 와이파이가 없습니다.</div>';
+    } else {
+      list.innerHTML = nets.map(n => {
+        const rssi = n.rssi;
+        const encodedSsid = encodeURIComponent(n.ssid).replace(/'/g, '%27');
+        let icon = '󰖩';
+        if (rssi < -80) icon = '󰖪';
+        else if (rssi < -70) icon = '󰖩';
+
+        return `
+          <div class="profile" onclick="selectScanned(decodeURIComponent('${encodedSsid}'), ${Number(n.channel)})" style="justify-content:space-between;padding:10px 14px;border-radius:10px;background:var(--surface);border:1px solid var(--line-2);transition:all 0.2s">
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <span style="font-weight:600;color:var(--ink);font-size:13px">${escHtml(n.ssid)}</span>
+              <span style="font-family:var(--mono);font-size:10px;opacity:0.6">CH ${n.channel} · ${rssi}dBm</span>
+            </div>
+            <span style="font-size:14px">${n.enc !== 0 ? '🔒' : ''}</span>
+          </div>
+        `;
+      }).join('');
+    }
+  } catch (e) {
+    stat.textContent = '실패';
+    dmsg('스캔 실패: ' + e.message, false);
+  } finally {
+    b.disabled = false;
+  }
+}
+
+function selectScanned(ssid, ch) {
+  document.getElementById('wf-ssid').value = ssid;
+  document.getElementById('wf-ch').value = ch;
+  if (!document.getElementById('wf-name').value) {
+    document.getElementById('wf-name').value = ssid.toLowerCase().replace(/\s+/g, '_');
+  }
+  document.getElementById('wf-pw').focus();
+  dmsg('와이파이 선택됨: ' + ssid);
 }
 
 function deleteWifi(b) {

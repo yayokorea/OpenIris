@@ -55,6 +55,7 @@ void APIServer::setupServer() {
   routes.emplace("ip", &APIServer::getDeviceIP);
   routes.emplace("save", &APIServer::save);
   routes.emplace("wifiStrength", &APIServer::rssi);
+  routes.emplace("scanWiFi", &APIServer::scanWiFi);
 
   //! reserve enough memory for all routes - must be called after adding routes
   //! and before adding routes to route_map

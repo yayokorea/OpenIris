@@ -57,6 +57,7 @@ class BaseAPI {
   void getDeviceIP(AsyncWebServerRequest* request);
   void save(AsyncWebServerRequest* request);
   void rssi(AsyncWebServerRequest* request);
+  void scanWiFi(AsyncWebServerRequest* request);
 
   /* Camera Handlers */
   void setCamera(AsyncWebServerRequest* request);
