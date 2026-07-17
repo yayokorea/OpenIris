@@ -3,6 +3,13 @@
 [![semantic versioning](https://img.shields.io/badge/semantic%20versioning-2.0.0-green.svg)](https://semver.org)
 > All notable changes to this project will be documented in this file
 
+## [2.15.1](https://github.com/yayokorea/OpenIris/compare/v2.15.0...v2.15.1) (2026-07-17)
+
+
+### 🐛 Bug Fixes
+
+* **camera:** 대비 변경 후 흑백 효과 유지 ([6b65030](https://github.com/yayokorea/OpenIris/commit/6b65030fe41925221a374aab6280d81941d92ede))
+
 ## [2.15.0](https://github.com/yayokorea/OpenIris/compare/v2.14.2...v2.15.0) (2026-07-17)
 
 
