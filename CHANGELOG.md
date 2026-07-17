@@ -3,6 +3,13 @@
 [![semantic versioning](https://img.shields.io/badge/semantic%20versioning-2.0.0-green.svg)](https://semver.org)
 > All notable changes to this project will be documented in this file
 
+## [2.17.0](https://github.com/yayokorea/OpenIris/compare/v2.16.0...v2.17.0) (2026-07-17)
+
+
+### 🍕 Features
+
+* **camera:** OV2640 확장 대비 지원 ([65594c5](https://github.com/yayokorea/OpenIris/commit/65594c5db932b0313fc9ee2c92bab97fac2dd137))
+
 ## [2.16.0](https://github.com/yayokorea/OpenIris/compare/v2.15.1...v2.16.0) (2026-07-17)
 
 
