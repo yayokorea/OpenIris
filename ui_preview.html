@@ -572,6 +572,13 @@ body{
                   <span class="slider__val" id="cm-b-v">2</span>
                 </div>
               </div>
+              <div class="field--full">
+                <label class="label">대비</label>
+                <div class="slider">
+                  <input type="range" min="-2" max="2" value="2" id="cm-c">
+                  <span class="slider__val" id="cm-c-v">2</span>
+                </div>
+              </div>
               <div class="field--inline">
                 <div><div class="label">상하 반전 <small>V-Flip</small></div></div>
                 <label class="toggle">
@@ -710,6 +717,7 @@ bindRange('wf-tx', 'dbm');
 bindRange('dv-tx', 'dbm');
 bindRange('cm-q');
 bindRange('cm-b');
+bindRange('cm-c');
 
 // ── Segmented control ──
 document.querySelectorAll('.seg').forEach(seg => {
@@ -837,7 +845,7 @@ function applyCamera(b) {
   const restartMode = document.querySelector('#restart-seg .seg__opt.is-on')?.dataset.val ?? 0;
   run(b, '카메라 적용', () => call('setCamera', 'GET', {
     framesize: val('cm-res'), vflip, hflip: hflip,
-    quality: val('cm-q'), brightness: val('cm-b')
+    quality: val('cm-q'), brightness: val('cm-b'), contrast: val('cm-c')
   }));
 }
 
@@ -919,11 +927,12 @@ async function loadConfig() {
       set('cm-res', c.camera_config.framesize);
       set('cm-q',   c.camera_config.quality);
       set('cm-b',   c.camera_config.brightness);
+      set('cm-c',   c.camera_config.contrast);
       const vf = document.getElementById('cm-vflip');
       const hf = document.getElementById('cm-hflip');
       vf.checked = !!c.camera_config.vflip; vf.dispatchEvent(new Event('change'));
       hf.checked = !!c.camera_config.href;  hf.dispatchEvent(new Event('change'));
-      ['cm-q', 'cm-b'].forEach(id => bindRange(id));
+      ['cm-q', 'cm-b', 'cm-c'].forEach(id => bindRange(id));
       updateCamResLabel();
     }
 

@@ -57,6 +57,7 @@ void ProjectConfig::initConfig() {
       .framesize = (uint8_t)CAM_RESOLUTION,
       .quality = 7,
       .brightness = 2,
+      .contrast = 2,
   };
 }
 
@@ -133,6 +134,7 @@ void ProjectConfig::cameraConfigSave() {
   putInt("framesize", this->config.camera.framesize);
   putInt("quality", this->config.camera.quality);
   putInt("brightness", this->config.camera.brightness);
+  putInt("contrast", this->config.camera.contrast);
 }
 
 bool ProjectConfig::reset() {
@@ -204,6 +206,7 @@ void ProjectConfig::load() {
   this->config.camera.framesize = getInt("framesize", (uint8_t)CAM_RESOLUTION);
   this->config.camera.quality = getInt("quality", 7);
   this->config.camera.brightness = getInt("brightness", 2);
+  this->config.camera.contrast = getInt("contrast", 2);
 
   this->_already_loaded = true;
   this->notifyAll(ConfigState_e::configLoaded);
@@ -243,6 +246,7 @@ void ProjectConfig::setCameraConfig(uint8_t vflip,
                                     uint8_t href,
                                     uint8_t quality,
                                     uint8_t brightness,
+                                    int8_t contrast,
                                     bool shouldNotify) {
   log_d("Updating camera config");
   this->config.camera.vflip = vflip;
@@ -250,6 +254,7 @@ void ProjectConfig::setCameraConfig(uint8_t vflip,
   this->config.camera.framesize = framesize;
   this->config.camera.quality = quality;
   this->config.camera.brightness = brightness;
+  this->config.camera.contrast = contrast;
 
   log_d("Updating Camera config");
   if (shouldNotify)
@@ -388,9 +393,9 @@ std::string ProjectConfig::MDNSConfig_t::toRepresentation() {
 std::string ProjectConfig::CameraConfig_t::toRepresentation() {
   std::string json = Helpers::format_string(
       "\"camera_config\": {\"vflip\": %d,\"framesize\": %d,\"href\": "
-      "%d,\"quality\": %d,\"brightness\": %d}",
+      "%d,\"quality\": %d,\"brightness\": %d,\"contrast\": %d}",
       this->vflip, this->framesize, this->href, this->quality,
-      this->brightness);
+      this->brightness, this->contrast);
   return json;
 }
 

@@ -389,6 +389,7 @@ void BaseAPI::setCamera(AsyncWebServerRequest* request) {
       uint8_t temp_camera_hflip = 0;
       uint8_t temp_camera_quality = 0;
       uint8_t temp_camera_brightness = 0;
+      int8_t temp_camera_contrast = 2;
 
       int params = request->params();
       //! Using the else if statements to ensure that the values do not need to
@@ -406,13 +407,17 @@ void BaseAPI::setCamera(AsyncWebServerRequest* request) {
           temp_camera_quality = (uint8_t)param->value().toInt();
         } else if (param->name() == "brightness") {
           temp_camera_brightness = (uint8_t)param->value().toInt();
+        } else if (param->name() == "contrast") {
+          temp_camera_contrast =
+              (int8_t)constrain(param->value().toInt(), -2, 2);
         }
       }
       // note: We're passing empty params by design, this is done to reset
       // specific fields
       projectConfig.setCameraConfig(temp_camera_vflip, temp_camera_framesize,
                                     temp_camera_hflip, temp_camera_quality,
-                                    temp_camera_brightness, true);
+                                    temp_camera_brightness,
+                                    temp_camera_contrast, true);
 
       request->send(200, MIMETYPE_JSON,
                     "{\"msg\":\"Done. Camera Settings have been set.\"}");
