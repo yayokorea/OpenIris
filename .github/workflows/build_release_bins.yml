@@ -52,7 +52,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          NEXT_VERSION=$(semantic-release --dry-run 2>&1 | grep -oP "The next release version is \K\S+")
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            NEXT_VERSION=$(git describe --tags --abbrev=0 --match 'v[0-9]*' | sed 's/^v//')
+          else
+            NEXT_VERSION=$(semantic-release --dry-run 2>&1 | grep -oP "The next release version is \K\S+")
+          fi
           echo "next_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
           echo "Next release version: $NEXT_VERSION"
       - id: set-matrix
@@ -108,6 +112,7 @@ jobs:
           retention-days: 5
           if-no-files-found: error
   release-openiris:
+    if: ${{ github.event_name != 'pull_request' }}
     runs-on: ubuntu-latest
     needs: [build]
     steps:
