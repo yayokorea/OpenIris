@@ -39,6 +39,10 @@
 .rel-tag{font-family:monospace;font-weight:600;font-size:13px}
 .rel-date{font-size:11px;color:#656d76;margin-left:8px}
 .gh-grid{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.rel-item{padding:10px 0;border-top:1px solid #eaeef2}
+.rel-item:first-child{padding-top:0;border-top:0}
+#ghp-more{display:none;width:100%;margin-top:12px;border:1px solid #d0d7de;border-radius:6px;padding:6px 10px;background:#f6f8fa;color:#24292f;font-size:12px;cursor:pointer}
+#ghp-more:hover{background:#eaeef2}
 #ghp-prog{margin-top:10px;display:none}
 #ghp-prog.show{display:block}
 #ghp-bar-wrap{background:#e1e4e8;border-radius:4px;height:5px;overflow:hidden;margin:4px 0}
@@ -64,6 +68,7 @@
     </div>
   </div>
   <div id="ghp-area"><span style="color:#656d76;font-size:12px">릴리즈 불러오는 중...</span></div>
+  <button id="ghp-more" onclick="ghLoadMore()"></button>
   <div id="ghp-prog">
     <div style="display:flex;justify-content:space-between;font-size:11px;color:#656d76">
       <span id="ghp-lbl">처리 중...</span><span id="ghp-pct">0%</span>
@@ -74,7 +79,10 @@
 </div>
 <script>
 window._ghA=[];
-window._lastRel=null;
+window._ghReleases=[];
+window._ghRepo='';
+window._ghPage=1;
+window._ghHasMore=false;
 function ghToggleCfg(){
   var c=document.getElementById('ghp-cfg');
   var b=document.getElementById('ghp-rb');
@@ -83,7 +91,25 @@ function ghToggleCfg(){
   b.textContent=open?'설정 ▴':'설정 ▾';
 }
 function ghRerender(){
-  if(window._lastRel)ghRender(window._lastRel);
+  if(window._ghReleases.length)ghRender();
+}
+async function ghLoadMore(){
+  if(!window._ghHasMore)return;
+  var more=document.getElementById('ghp-more');
+  more.disabled=true;
+  more.textContent='불러오는 중...';
+  try{
+    var next=window._ghPage+1;
+    var result=await ghFetchReleases(window._ghRepo,next);
+    window._ghPage=next;
+    window._ghHasMore=result.hasMore;
+    window._ghReleases=window._ghReleases.concat(result.releases);
+    ghRender();
+  }catch(e){
+    more.textContent='더보기 실패 · 다시 시도';
+  }finally{
+    more.disabled=false;
+  }
 }
 function ghProg(pct,lbl,status,cls){
   var w=document.getElementById('ghp-prog');
@@ -173,9 +199,10 @@ async function ghPollStatus(){
     setTimeout(ghPollStatus,2000);
   }
 }
-function ghRender(rel){
-  window._ghA=[];
-  window._lastRel=rel;
+function ghEsc(value){
+  return String(value).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});
+}
+function ghRenderRelease(rel){
   var showAll=document.getElementById('ghp-all').checked;
   var all=(rel.assets||[]).filter(function(a){return a.name.endsWith('.bin');});
   var bins=showAll?all:all.filter(function(a){return a.name.indexOf('_release')!==-1;});
@@ -183,30 +210,53 @@ function ghRender(rel){
   var date=new Date(rel.published_at).toLocaleDateString('ko-KR');
   var rows;
   if(bins.length){
-    rows='<div class="gh-grid">'+bins.map(function(a,i){
-      window._ghA[i]={downloadUrl:a.browser_download_url,name:a.name};
+    rows='<div class="gh-grid">'+bins.map(function(a){
+      var i=window._ghA.length;
+      window._ghA.push({downloadUrl:a.browser_download_url,name:a.name});
       var isRel=a.name.indexOf('_release')!==-1;
       var board=a.name.replace(/_release.*/,'').replace(/-v.*/,'')+(showAll&&!isRel?' (debug)':'');
-      return '<button class="ins-btn" onclick="ghInstall('+i+')" title="'+a.name+'">'+board+'</button>';
+      return '<button class="ins-btn" onclick="ghInstall('+i+')" title="'+ghEsc(a.name)+'">'+ghEsc(board)+'</button>';
     }).join('')+'</div>';
   }else{
     rows='<span style="color:#656d76;font-size:12px">.bin 에셋 없음</span>';
   }
-  document.getElementById('ghp-area').innerHTML=
-    '<div style="display:flex;align-items:baseline;margin-bottom:4px">'
-    +'<span class="rel-tag">'+rel.tag_name+'</span>'
+  return '<div class="rel-item"><div style="display:flex;align-items:baseline;margin-bottom:4px">'
+    +'<span class="rel-tag">'+ghEsc(rel.tag_name)+'</span>'
     +'<span class="rel-date">'+date+'</span></div>'
     +'<div style="font-size:11px;color:#656d76;margin-bottom:2px">보드를 선택하세요</div>'
-    +rows;
+    +rows+'</div>';
+}
+function ghRender(){
+  window._ghA=[];
+  document.getElementById('ghp-area').innerHTML=window._ghReleases.map(ghRenderRelease).join('');
+  var more=document.getElementById('ghp-more');
+  more.style.display=window._ghHasMore?'block':'none';
+  more.textContent='이전 버전 더보기';
+}
+async function ghFetchReleases(repo,page){
+  var r=await fetch('https://api.github.com/repos/'+repo+'/releases?per_page=5&page='+page,{headers:{Accept:'application/vnd.github.v3+json'}});
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  var raw=await r.json();
+  return {
+    releases:raw.filter(function(rel){return !rel.draft&&!rel.prerelease;}),
+    hasMore:raw.length===5
+  };
 }
 async function ghCheck(){
   var repo=document.getElementById('ghp-repo').value.trim();
   if(!repo)return;
+  window._ghReleases=[];
+  window._ghRepo=repo;
+  window._ghPage=1;
+  window._ghHasMore=false;
+  document.getElementById('ghp-more').style.display='none';
   document.getElementById('ghp-area').innerHTML='<span style="color:#656d76;font-size:12px">불러오는 중...</span>';
   try{
-    var r=await fetch('https://api.github.com/repos/'+repo+'/releases/latest',{headers:{Accept:'application/vnd.github.v3+json'}});
-    if(!r.ok)throw new Error('HTTP '+r.status);
-    ghRender(await r.json());
+    var result=await ghFetchReleases(repo,1);
+    window._ghReleases=result.releases;
+    window._ghHasMore=result.hasMore;
+    if(!window._ghReleases.length)throw new Error('표시할 릴리즈가 없습니다');
+    ghRender();
   }catch(e){
     document.getElementById('ghp-area').innerHTML='<span style="color:#cf222e;font-size:12px">릴리즈 로드 실패: '+e.message+'</span>';
   }

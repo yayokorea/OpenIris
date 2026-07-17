@@ -5,6 +5,7 @@ import subprocess
 import sys
 import re
 import os
+import gzip
 from colors import *
 
 project = ""
@@ -62,6 +63,45 @@ def generate_webpage(version):
 
     sys.stdout.write(GREEN)
     print("[webpage]: Generated controlWebpage.h  <- v%s" % version)
+    sys.stdout.write(RESET)
+
+
+def generate_elegant_webpage():
+    project_dir = env.subst("$PROJECT_DIR")
+    src = os.path.join(project_dir, "..", "elegant_ota_with_github.html")
+    dst = os.path.join(
+        project_dir, "lib", "src", "network", "api", "baseAPI", "elegantWebpage.h"
+    )
+
+    try:
+        with open(src, "rb") as f:
+            html = f.read()
+    except FileNotFoundError:
+        sys.stdout.write(RED)
+        print("[webpage]: elegant_ota_with_github.html not found at %s" % src)
+        sys.stdout.write(RESET)
+        return
+
+    # mtime=0 keeps the generated header identical when the HTML has not changed.
+    compressed = gzip.compress(html, compresslevel=9, mtime=0)
+    values = [str(value) for value in compressed]
+    rows = [",".join(values[i : i + 30]) for i in range(0, len(values), 30)]
+    byte_array = ",\n".join(rows)
+
+    content = (
+        "#ifndef ElegantOTAWebpage_h\n"
+        "#define ElegantOTAWebpage_h\n\n"
+        "#include <Arduino.h>\n\n"
+        "const uint32_t ELEGANT_HTML_SIZE = %d;\n"
+        "const uint8_t ELEGANT_HTML[] PROGMEM = {\n%s\n};\n\n"
+        "#endif\n"
+    ) % (len(compressed), byte_array)
+
+    with open(dst, "w", encoding="utf-8") as f:
+        f.write(content)
+
+    sys.stdout.write(GREEN)
+    print("[webpage]: Generated elegantWebpage.h (%d gzip bytes)" % len(compressed))
     sys.stdout.write(RESET)
 
 
@@ -203,6 +243,8 @@ def customName(project, version, commit, branch):
 
     # Generate controlWebpage.h from ui_preview.html with the current version
     generate_webpage(firm_version)
+    # Generate the gzip-compressed OTA webpage embedded by /update
+    generate_elegant_webpage()
 
 
 try:
