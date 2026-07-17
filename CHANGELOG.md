@@ -3,6 +3,13 @@
 [![semantic versioning](https://img.shields.io/badge/semantic%20versioning-2.0.0-green.svg)](https://semver.org)
 > All notable changes to this project will be documented in this file
 
+## [2.15.0](https://github.com/yayokorea/OpenIris/compare/v2.14.2...v2.15.0) (2026-07-17)
+
+
+### 🍕 Features
+
+* **camera:** 대비 조절 설정 추가 ([7fd6d96](https://github.com/yayokorea/OpenIris/commit/7fd6d960dfe1d7d748e60d6f52e6a53e90ffd36f))
+
 ## [2.14.2](https://github.com/yayokorea/OpenIris/compare/v2.14.1...v2.14.2) (2026-05-19)
 
 
