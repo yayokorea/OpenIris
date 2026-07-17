@@ -47,6 +47,7 @@ class ProjectConfig : public Preferences, public ISubject<ConfigState_e> {
     uint8_t framesize;
     uint8_t quality;
     uint8_t brightness;
+    int8_t contrast;
 
     std::string toRepresentation();
   };
@@ -116,6 +117,7 @@ class ProjectConfig : public Preferences, public ISubject<ConfigState_e> {
                        uint8_t href,
                        uint8_t quality,
                        uint8_t brightness,
+                       int8_t contrast,
                        bool shouldNotify);
   void setWifiConfig(const std::string& networkName,
                      const std::string& ssid,
